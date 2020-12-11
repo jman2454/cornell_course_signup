@@ -3,8 +3,9 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
-timeout = 10
+timeout = 30
 
 user = sys.argv[1]
 pwd = sys.argv[2]
@@ -15,75 +16,85 @@ def wait_get_element(driver, timeout, locator):
 
 
 driver = webdriver.Chrome()
-driver.get("http://studentcenter.cornell.edu")
+done = False
 
-if driver.title == "Cornell University Web Login":
-    main = driver.find_element_by_xpath("html/body/main")
-    netid_field = main.find_element_by_name("netid")
-    pass_field = main.find_element_by_name("password")
-    login_btn = main.find_element_by_name("Submit")
-    netid_field.send_keys(user)
-    pass_field.send_keys(pwd)
-    login_btn.click()
+while not done:
+    try:
+        driver.get("http://studentcenter.cornell.edu")
 
-wrap = WebDriverWait(driver, timeout).until(
-    EC.presence_of_element_located((By.ID, "wrap"))
-)
+        if driver.title == "Cornell University Web Login":
+            main = driver.find_element_by_xpath("html/body/main")
+            netid_field = main.find_element_by_name("netid")
+            pass_field = main.find_element_by_name("password")
+            login_btn = main.find_element_by_name("Submit")
+            netid_field.send_keys(user)
+            pass_field.send_keys(pwd)
+            login_btn.click()
 
-driver.switch_to.frame(0)
+            wrap = wait_get_element(driver, timeout, (By.ID, "wrap"))
 
-signin_methods = driver.find_element_by_id("login-form").find_element_by_id(
-    "auth_methods"
-)
+            driver.switch_to.frame(0)
 
-push_btn = signin_methods.find_element_by_xpath("fieldset/div/button")
-push_btn.click()
+            signin_methods = driver.find_element_by_id("login-form").find_element_by_id(
+                "auth_methods"
+            )
 
-load_page = wait_get_element(driver, 100, (By.NAME, "TargetContent"))
+            push_btn = signin_methods.find_element_by_xpath("fieldset/div/button")
+            push_btn.click()
 
-driver.switch_to.frame(0)
+        load_page = wait_get_element(driver, 100, (By.NAME, "TargetContent"))
 
-shopping_cart_btn = driver.find_element_by_id("ACE_width").find_element_by_id(
-    "DERIVED_SSS_SCL_SSS_ENRL_CART$276$"
-)
+        driver.switch_to.frame(0)
 
-shopping_cart_btn.click()
+        shopping_cart_btn = driver.find_element_by_id("ACE_width").find_element_by_id(
+            "DERIVED_SSS_SCL_SSS_ENRL_CART$276$"
+        )
 
-table = wait_get_element(driver, timeout, (By.ID, "SSR_DUMMY_RECV1$scroll$0"))
+        shopping_cart_btn.click()
 
-radio_btns = table.find_element_by_xpath(
-    "tbody/tr[2]/td/table/tbody"
-).find_elements_by_tag_name("tr")
+        table = wait_get_element(driver, timeout, (By.ID, "SSR_DUMMY_RECV1$scroll$0"))
 
-latest_sem_btn = radio_btns[len(radio_btns) - 1].find_element_by_tag_name("input")
-latest_sem_btn.click()
+        radio_btns = table.find_element_by_xpath(
+            "tbody/tr[2]/td/table/tbody"
+        ).find_elements_by_tag_name("tr")
 
-cont = driver.find_element_by_name("DERIVED_SSS_SCT_SSR_PB_GO")
-cont.click()
+        latest_sem_btn = radio_btns[len(radio_btns) - 1].find_element_by_tag_name(
+            "input"
+        )
+        latest_sem_btn.click()
 
-table = wait_get_element(driver, timeout, (By.ID, "win0divSSR_REGFORM_VW$0"))
-classes = table.find_elements_by_xpath('//input[@type="checkbox"]')
+        cont = driver.find_element_by_name("DERIVED_SSS_SCT_SSR_PB_GO")
+        cont.click()
 
-while len(classes) > 0:
-    for inpt in classes:
-        inpt.click()
+        table = wait_get_element(driver, timeout, (By.ID, "win0divSSR_REGFORM_VW$0"))
+        classes = table.find_elements_by_xpath('//input[@type="checkbox"]')
 
-    enrll = driver.find_element_by_xpath('//input[@title="Enroll in Course"]')
-    enrll.click()
+        while len(classes) > 0:
+            for inpt in classes:
+                inpt.click()
 
-    finish_btn = wait_get_element(
-        driver, timeout, (By.ID, "DERIVED_REGFRM1_SSR_PB_SUBMIT")
-    )
+            enrll = driver.find_element_by_xpath('//input[@title="Enroll in Course"]')
+            enrll.click()
 
-    finish_btn.click()
+            finish_btn = wait_get_element(
+                driver, timeout, (By.ID, "DERIVED_REGFRM1_SSR_PB_SUBMIT")
+            )
 
-    restart_btn = wait_get_element(
-        driver, timeout, (By.ID, "DERIVED_REGFRM1_SSR_LINK_STARTOVER")
-    )
+            finish_btn.click()
 
-    restart_btn.click()
+            restart_btn = wait_get_element(
+                driver, timeout, (By.ID, "DERIVED_REGFRM1_SSR_LINK_STARTOVER")
+            )
 
-    table = wait_get_element(driver, timeout, (By.ID, "win0divSSR_REGFORM_VW$0"))
-    classes = table.find_elements_by_xpath('//input[@type="checkbox"]')
+            restart_btn.click()
 
-print("All courses in your shopping cart have been added!")
+            table = wait_get_element(
+                driver, timeout, (By.ID, "win0divSSR_REGFORM_VW$0")
+            )
+            classes = table.find_elements_by_xpath('//input[@type="checkbox"]')
+
+        done = True
+        print("All courses in your shopping cart have been added!")
+
+    except TimeoutException:
+        pass
