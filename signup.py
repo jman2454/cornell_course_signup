@@ -53,7 +53,7 @@ while not done:
         shopping_cart_btn.click()
 
         try:
-            table = wait_get_element(driver, 5, (By.CLASS_NAME, "PSLEVEL1GRID"))
+            table = wait_get_element(driver, 5, (By.CLASS_NAME, "PSLEVEL2GRIDWBO"))
 
             radio_btns = table.find_element_by_xpath(
                 "tbody/tr[2]/td/table/tbody"
@@ -66,8 +66,8 @@ while not done:
 
             cont = driver.find_element_by_name("DERIVED_SSS_SCT_SSR_PB_GO")
             cont.click()
-        except:
-            pass
+        except Exception as e:
+            print(e)
 
         table = wait_get_element(driver, timeout, (By.ID, "win0divSSR_REGFORM_VW$0"))
         classes = table.find_elements_by_xpath('//input[@type="checkbox"]')
